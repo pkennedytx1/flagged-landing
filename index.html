@@ -1,0 +1,1215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FLAGGED — Real-Time Venue Security</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --red: #E8180C;
+    --red-dim: #8B0F07;
+    --amber: #F5A623;
+    --black: #080808;
+    --surface: #111111;
+    --surface-2: #181818;
+    --border: #2a2a2a;
+    --text: #F0EDE8;
+    --text-muted: #777;
+    --text-dim: #444;
+    --mono: 'DM Mono', monospace;
+    --display: 'Bebas Neue', sans-serif;
+    --serif: 'Instrument Serif', serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--black);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 14px;
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  /* NOISE OVERLAY */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 1000;
+    opacity: 0.4;
+  }
+
+  /* NAV */
+  nav {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 48px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(8,8,8,0.92);
+    backdrop-filter: blur(12px);
+  }
+
+  .nav-logo {
+    font-family: var(--display);
+    font-size: 28px;
+    letter-spacing: 4px;
+    color: var(--red);
+  }
+
+  .nav-logo span { color: var(--text); }
+
+  .nav-links {
+    display: flex;
+    gap: 36px;
+    list-style: none;
+  }
+
+  .nav-links a {
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    transition: color 0.2s;
+  }
+
+  .nav-links a:hover { color: var(--text); }
+
+  .nav-cta {
+    background: var(--red);
+    color: var(--text) !important;
+    padding: 10px 20px;
+    border: none !important;
+  }
+
+  .nav-cta:hover { background: #ff1f12 !important; color: white !important; }
+
+  /* HERO */
+  .hero {
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    padding-top: 80px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero-grid-line {
+    position: absolute;
+    top: 0; bottom: 0;
+    left: 50%;
+    width: 1px;
+    background: var(--border);
+    opacity: 0.5;
+  }
+
+  .hero-left {
+    padding: 100px 48px 80px 48px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    position: relative;
+    z-index: 2;
+  }
+
+  .hero-eyebrow {
+    font-size: 10px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--red);
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .hero-eyebrow::before {
+    content: '';
+    display: inline-block;
+    width: 24px;
+    height: 1px;
+    background: var(--red);
+  }
+
+  .hero-title {
+    font-family: var(--display);
+    font-size: clamp(80px, 10vw, 130px);
+    line-height: 0.9;
+    letter-spacing: 2px;
+    color: var(--text);
+    margin-bottom: 12px;
+  }
+
+  .hero-title .red { color: var(--red); }
+
+  .hero-subtitle {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 22px;
+    color: var(--text-muted);
+    margin-bottom: 48px;
+    line-height: 1.4;
+    max-width: 400px;
+  }
+
+  .hero-actions {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+  }
+
+  .btn-primary {
+    background: var(--red);
+    color: white;
+    padding: 16px 32px;
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-primary::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: white;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .btn-primary:hover::after { opacity: 0.1; }
+
+  .btn-secondary {
+    color: var(--text-muted);
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    text-decoration: none;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--border);
+    transition: color 0.2s, border-color 0.2s;
+  }
+
+  .btn-secondary:hover { color: var(--text); border-color: var(--text-muted); }
+
+  .hero-right {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 100px 48px 80px;
+  }
+
+  /* MOCK PHONE / ALERT UI */
+  .phone-mockup {
+    width: 280px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 32px;
+    padding: 24px 20px;
+    position: relative;
+    box-shadow: 0 0 80px rgba(232, 24, 12, 0.15), 0 40px 80px rgba(0,0,0,0.8);
+    animation: float 4s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-12px); }
+  }
+
+  .phone-notch {
+    width: 80px;
+    height: 8px;
+    background: var(--border);
+    border-radius: 4px;
+    margin: 0 auto 24px;
+  }
+
+  .phone-status {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 0 4px;
+  }
+
+  .phone-status-text {
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .live-dot {
+    width: 6px;
+    height: 6px;
+    background: var(--red);
+    border-radius: 50%;
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.8); }
+  }
+
+  .alert-card {
+    background: rgba(232, 24, 12, 0.08);
+    border: 1px solid rgba(232, 24, 12, 0.3);
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 10px;
+    animation: slideIn 0.5s ease forwards;
+    opacity: 0;
+  }
+
+  .alert-card:nth-child(1) { animation-delay: 0.3s; }
+  .alert-card:nth-child(2) { animation-delay: 0.8s; }
+  .alert-card:nth-child(3) { animation-delay: 1.3s; }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  .alert-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+  }
+
+  .alert-type {
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--red);
+    font-weight: 500;
+  }
+
+  .alert-time {
+    font-size: 9px;
+    color: var(--text-dim);
+  }
+
+  .alert-msg {
+    font-size: 11px;
+    color: var(--text);
+    line-height: 1.4;
+  }
+
+  .alert-footer {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 8px;
+  }
+
+  .alert-from {
+    font-size: 9px;
+    color: var(--text-muted);
+  }
+
+  .alert-status-badge {
+    font-size: 9px;
+    padding: 2px 8px;
+    border-radius: 2px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .badge-ack { background: rgba(245, 166, 35, 0.15); color: var(--amber); }
+  .badge-resolved { background: rgba(0, 200, 100, 0.1); color: #4CAF50; }
+  .badge-active { background: rgba(232, 24, 12, 0.2); color: var(--red); }
+
+  .calm-card {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 10px;
+    opacity: 0;
+    animation: slideIn 0.5s ease forwards;
+    animation-delay: 1.8s;
+  }
+
+  .calm-msg {
+    font-size: 11px;
+    color: var(--text-muted);
+    line-height: 1.4;
+  }
+
+  /* TICKER */
+  .ticker {
+    background: var(--red);
+    padding: 12px 0;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .ticker-inner {
+    display: flex;
+    gap: 64px;
+    animation: ticker 20s linear infinite;
+    white-space: nowrap;
+    width: max-content;
+  }
+
+  @keyframes ticker {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+
+  .ticker-item {
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: white;
+    font-family: var(--mono);
+  }
+
+  .ticker-item::before {
+    content: '●';
+    margin-right: 16px;
+    opacity: 0.6;
+  }
+
+  /* STATS */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .stat-cell {
+    padding: 60px 48px;
+    border-right: 1px solid var(--border);
+    position: relative;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.6s, transform 0.6s;
+  }
+
+  .stat-cell.visible { opacity: 1; transform: translateY(0); }
+
+  .stat-cell:last-child { border-right: none; }
+
+  .stat-num {
+    font-family: var(--display);
+    font-size: 72px;
+    line-height: 1;
+    color: var(--red);
+    display: block;
+    margin-bottom: 8px;
+  }
+
+  .stat-label {
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    display: block;
+    margin-bottom: 12px;
+  }
+
+  .stat-desc {
+    font-size: 12px;
+    color: var(--text-dim);
+    line-height: 1.5;
+    max-width: 200px;
+  }
+
+  /* FEATURES */
+  .section {
+    padding: 120px 48px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .section-label {
+    font-size: 10px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--red);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .section-title {
+    font-family: var(--display);
+    font-size: clamp(48px, 6vw, 80px);
+    line-height: 0.95;
+    margin-bottom: 64px;
+    letter-spacing: 1px;
+  }
+
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: var(--border);
+  }
+
+  .feature-card {
+    background: var(--black);
+    padding: 48px 36px;
+    position: relative;
+    overflow: hidden;
+    transition: background 0.3s;
+  }
+
+  .feature-card:hover { background: var(--surface); }
+
+  .feature-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--red);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.4s ease;
+  }
+
+  .feature-card:hover::before { transform: scaleX(1); }
+
+  .feature-icon {
+    font-size: 32px;
+    margin-bottom: 20px;
+    display: block;
+  }
+
+  .feature-num {
+    position: absolute;
+    top: 24px;
+    right: 24px;
+    font-family: var(--display);
+    font-size: 64px;
+    color: var(--surface-2);
+    line-height: 1;
+    transition: color 0.3s;
+  }
+
+  .feature-card:hover .feature-num { color: var(--border); }
+
+  .feature-title {
+    font-family: var(--display);
+    font-size: 28px;
+    letter-spacing: 1px;
+    margin-bottom: 12px;
+    color: var(--text);
+  }
+
+  .feature-desc {
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.7;
+  }
+
+  /* HOW IT WORKS */
+  .steps-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 48px;
+    margin-top: 64px;
+  }
+
+  .step {
+    position: relative;
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.5s, transform 0.5s;
+  }
+
+  .step.visible { opacity: 1; transform: translateY(0); }
+
+  .step-num {
+    font-family: var(--display);
+    font-size: 96px;
+    color: var(--border);
+    line-height: 1;
+    margin-bottom: 20px;
+    display: block;
+    transition: color 0.3s;
+  }
+
+  .step:hover .step-num { color: var(--red-dim); }
+
+  .step-title {
+    font-family: var(--display);
+    font-size: 24px;
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+  }
+
+  .step-desc {
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.7;
+  }
+
+  .step-connector {
+    position: absolute;
+    top: 48px;
+    right: -24px;
+    width: 48px;
+    height: 1px;
+    background: var(--border);
+    z-index: 1;
+  }
+
+  .step:last-child .step-connector { display: none; }
+
+  /* LEGAL SECTION */
+  .legal-section {
+    padding: 120px 48px;
+    border-bottom: 1px solid var(--border);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 80px;
+    align-items: start;
+  }
+
+  .legal-left {}
+
+  .legal-quote {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 28px;
+    line-height: 1.5;
+    color: var(--text);
+    margin-bottom: 24px;
+    padding-left: 24px;
+    border-left: 3px solid var(--red);
+  }
+
+  .legal-source {
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+  }
+
+  .legal-right {}
+
+  .law-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+
+  .law-item {
+    display: flex;
+    gap: 20px;
+    padding: 20px 24px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    transition: background 0.2s;
+  }
+
+  .law-item:hover { background: var(--surface-2); }
+
+  .law-state {
+    font-family: var(--display);
+    font-size: 20px;
+    color: var(--red);
+    min-width: 80px;
+  }
+
+  .law-detail {
+    font-size: 11px;
+    color: var(--text-muted);
+    line-height: 1.6;
+  }
+
+  /* PRICING */
+  .pricing-section {
+    padding: 120px 48px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: var(--border);
+    margin-top: 64px;
+  }
+
+  .pricing-card {
+    background: var(--black);
+    padding: 48px 36px;
+    position: relative;
+  }
+
+  .pricing-card.featured {
+    background: var(--surface);
+  }
+
+  .pricing-badge {
+    position: absolute;
+    top: 24px;
+    right: 24px;
+    background: var(--red);
+    color: white;
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 4px 10px;
+  }
+
+  .pricing-tier {
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 20px;
+  }
+
+  .pricing-price {
+    font-family: var(--display);
+    font-size: 72px;
+    line-height: 1;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+
+  .pricing-period {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-bottom: 36px;
+    letter-spacing: 1px;
+  }
+
+  .pricing-features {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 36px;
+  }
+
+  .pricing-features li {
+    font-size: 12px;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .pricing-features li::before {
+    content: '—';
+    color: var(--red);
+    font-size: 10px;
+  }
+
+  .btn-outline {
+    display: block;
+    text-align: center;
+    padding: 14px 24px;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    text-decoration: none;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    transition: all 0.2s;
+  }
+
+  .btn-outline:hover { border-color: var(--text-muted); color: var(--text); }
+
+  .btn-outline.red {
+    border-color: var(--red);
+    color: var(--red);
+  }
+
+  .btn-outline.red:hover { background: var(--red); color: white; }
+
+  /* CTA */
+  .cta-section {
+    padding: 160px 48px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .cta-bg {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 60% 60% at 50% 50%, rgba(232,24,12,0.06) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .cta-title {
+    font-family: var(--display);
+    font-size: clamp(64px, 10vw, 140px);
+    line-height: 0.9;
+    margin-bottom: 32px;
+    position: relative;
+    z-index: 2;
+  }
+
+  .cta-title .dim { color: var(--border); }
+
+  .cta-sub {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 20px;
+    color: var(--text-muted);
+    margin-bottom: 48px;
+    position: relative;
+    z-index: 2;
+  }
+
+  .cta-actions {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    position: relative;
+    z-index: 2;
+  }
+
+  /* EMAIL FORM */
+  .email-form {
+    display: flex;
+    gap: 0;
+    max-width: 440px;
+    margin: 0 auto;
+  }
+
+  .email-input {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-right: none;
+    padding: 16px 20px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .email-input::placeholder { color: var(--text-dim); }
+  .email-input:focus { border-color: var(--red); }
+
+  .email-submit {
+    background: var(--red);
+    border: 1px solid var(--red);
+    color: white;
+    padding: 16px 24px;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background 0.2s;
+    white-space: nowrap;
+  }
+
+  .email-submit:hover { background: #ff1f12; }
+
+  /* FOOTER */
+  footer {
+    padding: 40px 48px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .footer-logo {
+    font-family: var(--display);
+    font-size: 20px;
+    letter-spacing: 4px;
+    color: var(--red);
+  }
+
+  .footer-copy {
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+  }
+
+  /* SCROLL ANIMATIONS */
+  .reveal {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* SUCCESS MESSAGE */
+  .success-msg {
+    display: none;
+    font-size: 12px;
+    color: #4CAF50;
+    letter-spacing: 1px;
+    margin-top: 12px;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">FLAG<span>GED</span></div>
+  <ul class="nav-links">
+    <li><a href="#features">Features</a></li>
+    <li><a href="#how">How It Works</a></li>
+    <li><a href="#legal">Liability</a></li>
+    <li><a href="#pricing">Pricing</a></li>
+    <li><a href="#waitlist" class="nav-cta">Request Access</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-grid-line"></div>
+
+  <div class="hero-left">
+    <div class="hero-eyebrow">Real-Time Venue Security</div>
+    <h1 class="hero-title">
+      FLAG<span class="red">GED</span>
+    </h1>
+    <p class="hero-subtitle">When every second matters, one tap alerts your entire security team — with a timestamped record that holds up in court.</p>
+    <div class="hero-actions">
+      <a href="#waitlist" class="btn-primary">Request Early Access</a>
+      <a href="#how" class="btn-secondary">See How It Works →</a>
+    </div>
+  </div>
+
+  <div class="hero-right">
+    <div class="phone-mockup">
+      <div class="phone-notch"></div>
+      <div class="phone-status">
+        <span class="phone-status-text">FLAGGED · Bar 1 · Live</span>
+        <div class="live-dot"></div>
+      </div>
+
+      <div class="alert-card">
+        <div class="alert-header">
+          <span class="alert-type">⚠ Over-service</span>
+          <span class="alert-time">11:47 PM</span>
+        </div>
+        <div class="alert-msg">Patron at Bar 2, Seat 7 — showing signs of intoxication. Cut off recommended.</div>
+        <div class="alert-footer">
+          <span class="alert-from">From: J. Martinez, Bar 2</span>
+          <span class="alert-status-badge badge-ack">Acknowledged</span>
+        </div>
+      </div>
+
+      <div class="alert-card">
+        <div class="alert-header">
+          <span class="alert-type">🚨 Escalation</span>
+          <span class="alert-time">11:52 PM</span>
+        </div>
+        <div class="alert-msg">Verbal altercation near Pool Table 3. Two males. Bouncer requested immediately.</div>
+        <div class="alert-footer">
+          <span class="alert-from">From: T. Okafor, Floor</span>
+          <span class="alert-status-badge badge-active">Active</span>
+        </div>
+      </div>
+
+      <div class="calm-card">
+        <div class="alert-msg" style="color: #4CAF50; font-size: 10px; letter-spacing: 1px; text-transform: uppercase;">✓ Situation resolved · 11:58 PM · D. Chen</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TICKER -->
+<div class="ticker">
+  <div class="ticker-inner">
+    <span class="ticker-item">Instant Bouncer Alerts</span>
+    <span class="ticker-item">Timestamped Incident Logs</span>
+    <span class="ticker-item">Dram Shop Legal Defense</span>
+    <span class="ticker-item">43 States Have Liability Laws</span>
+    <span class="ticker-item">One Tap. Every Staff Member Notified.</span>
+    <span class="ticker-item">Instant Bouncer Alerts</span>
+    <span class="ticker-item">Timestamped Incident Logs</span>
+    <span class="ticker-item">Dram Shop Legal Defense</span>
+    <span class="ticker-item">43 States Have Liability Laws</span>
+    <span class="ticker-item">One Tap. Every Staff Member Notified.</span>
+  </div>
+</div>
+
+<!-- STATS -->
+<div class="stats-row">
+  <div class="stat-cell reveal">
+    <span class="stat-num">43</span>
+    <span class="stat-label">States With Dram Shop Laws</span>
+    <span class="stat-desc">If you over-serve and your patron causes harm, you can be held liable. Every shift carries legal risk.</span>
+  </div>
+  <div class="stat-cell reveal">
+    <span class="stat-num">$37M</span>
+    <span class="stat-label">Largest Known Verdict</span>
+    <span class="stat-desc">A St. Louis nightclub faced a bench verdict of $37.5M in a single over-service case. Documentation is your defense.</span>
+  </div>
+  <div class="stat-cell reveal">
+    <span class="stat-num">60K+</span>
+    <span class="stat-label">Bars & Nightclubs in the US</span>
+    <span class="stat-desc">Every one of them is one bad night away from a lawsuit. Most have no incident trail at all.</span>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<section class="section" id="features">
+  <div class="section-label">Core Features</div>
+  <h2 class="section-title">BUILT FOR<br>THE FLOOR</h2>
+  <div class="features-grid">
+    <div class="feature-card">
+      <span class="feature-icon">⚡</span>
+      <span class="feature-num">01</span>
+      <div class="feature-title">One-Tap Alerts</div>
+      <p class="feature-desc">Bartenders, floor staff, and managers can fire off a flagged incident in under 2 seconds. No typing. No radio fumbling. Preset alert types get the right info to the right people instantly.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">📡</span>
+      <span class="feature-num">02</span>
+      <div class="feature-title">Live Staff Broadcast</div>
+      <p class="feature-desc">One alert reaches your entire on-duty security team simultaneously. Bouncers can acknowledge, respond, and update status in real time — everyone sees the same picture.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">🕐</span>
+      <span class="feature-num">03</span>
+      <div class="feature-title">Timestamped Logs</div>
+      <p class="feature-desc">Every alert, acknowledgment, and resolution is permanently logged with timestamp, staff member, and action taken. Your entire incident history is exportable at any time.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">⚖️</span>
+      <span class="feature-num">04</span>
+      <div class="feature-title">Legal-Ready Records</div>
+      <p class="feature-desc">When a dram shop claim lands, your attorney needs evidence of responsible service. Flagged generates court-ready incident reports showing exactly who made what call and when.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">🔒</span>
+      <span class="feature-num">05</span>
+      <div class="feature-title">Flagged Patron Database</div>
+      <p class="feature-desc">Build a venue-level record of problem patrons. Door staff can see flags from previous visits before someone even walks in — before problems start.</p>
+    </div>
+    <div class="feature-card">
+      <span class="feature-icon">📊</span>
+      <span class="feature-num">06</span>
+      <div class="feature-title">Manager Dashboard</div>
+      <p class="feature-desc">See incident patterns across nights, staff, and areas of your venue. Know your hotspots. Optimize your security coverage with data instead of gut feeling.</p>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="section" id="how">
+  <div class="section-label">Process</div>
+  <h2 class="section-title">HOW IT<br>WORKS</h2>
+  <div class="steps-grid">
+    <div class="step reveal">
+      <div class="step-connector"></div>
+      <span class="step-num">01</span>
+      <div class="step-title">Staff Spots an Issue</div>
+      <p class="step-desc">A bartender notices a patron is over-intoxicated, a floor host spots an altercation, or a guest reports harassment. They open Flagged.</p>
+    </div>
+    <div class="step reveal" style="transition-delay: 0.1s;">
+      <div class="step-connector"></div>
+      <span class="step-num">02</span>
+      <div class="step-title">One Tap to Flag</div>
+      <p class="step-desc">Select an alert type, add optional location detail, and hit send. The whole process takes under 3 seconds — no typing required.</p>
+    </div>
+    <div class="step reveal" style="transition-delay: 0.2s;">
+      <div class="step-connector"></div>
+      <span class="step-num">03</span>
+      <div class="step-title">Security Gets Notified</div>
+      <p class="step-desc">Every on-duty bouncer receives an instant push notification. They see the alert type, location, and who flagged it. They acknowledge with one tap.</p>
+    </div>
+    <div class="step reveal" style="transition-delay: 0.3s;">
+      <span class="step-num">04</span>
+      <div class="step-title">Incident Is Logged</div>
+      <p class="step-desc">Once resolved, staff close the incident. The full chain — who flagged it, who responded, time to resolution — is permanently stored and exportable.</p>
+    </div>
+  </div>
+</section>
+
+<!-- LEGAL -->
+<section class="legal-section" id="legal">
+  <div class="legal-left reveal">
+    <div class="section-label">Liability Protection</div>
+    <h2 class="section-title" style="margin-bottom: 48px;">YOUR LEGAL<br>SHIELD</h2>
+    <blockquote class="legal-quote">"Thorough documentation practices can make or break your defense against over-service claims."</blockquote>
+    <p class="legal-source">— Hospitality Liability Law, 2024</p>
+    <p style="font-size: 12px; color: var(--text-muted); margin-top: 32px; line-height: 1.8;">When a dram shop lawsuit hits, the question is always the same: <em>what did your staff know, and what did they do?</em> Without Flagged, your answer is "we think someone said something around midnight." With Flagged, you have a timestamped, named, legally exportable record of every decision made that night.</p>
+  </div>
+  <div class="legal-right reveal">
+    <ul class="law-list">
+      <li class="law-item">
+        <span class="law-state">TX</span>
+        <span class="law-detail">Texas TABC allows a safe harbor defense — but only if you can prove your staff followed responsible service protocols. Flagged is your proof.</span>
+      </li>
+      <li class="law-item">
+        <span class="law-state">CA</span>
+        <span class="law-detail">California holds venues liable for serving obviously intoxicated persons. Courts look for documented evidence of staff awareness and action.</span>
+      </li>
+      <li class="law-item">
+        <span class="law-state">NY</span>
+        <span class="law-detail">New York dram shop law allows third-party injury claims. Contemporaneous incident records are the gold standard for defense.</span>
+      </li>
+      <li class="law-item">
+        <span class="law-state">FL</span>
+        <span class="law-detail">Florida's strict liability standards make documented responsible service essential — especially for late-night venues and nightclubs.</span>
+      </li>
+      <li class="law-item">
+        <span class="law-state">+39</span>
+        <span class="law-detail">43 states total have dram shop statutes. If you serve alcohol, you are exposed. Documentation is your only defensible position.</span>
+      </li>
+    </ul>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="pricing-section" id="pricing">
+  <div class="section-label">Pricing</div>
+  <h2 class="section-title">SIMPLE,<br>FLAT PRICING</h2>
+  <div class="pricing-grid">
+    <div class="pricing-card reveal">
+      <div class="pricing-tier">Starter</div>
+      <div class="pricing-price">$79</div>
+      <div class="pricing-period">per venue / month</div>
+      <ul class="pricing-features">
+        <li>Up to 10 staff accounts</li>
+        <li>Real-time incident alerts</li>
+        <li>30-day incident log history</li>
+        <li>Basic report export (PDF)</li>
+        <li>Mobile app (iOS & Android)</li>
+      </ul>
+      <a href="#waitlist" class="btn-outline">Get Started</a>
+    </div>
+    <div class="pricing-card featured reveal" style="transition-delay: 0.1s;">
+      <div class="pricing-badge">Most Popular</div>
+      <div class="pricing-tier">Pro</div>
+      <div class="pricing-price">$189</div>
+      <div class="pricing-period">per venue / month</div>
+      <ul class="pricing-features">
+        <li>Unlimited staff accounts</li>
+        <li>Flagged patron database</li>
+        <li>Unlimited log history</li>
+        <li>Legal-ready incident reports</li>
+        <li>Manager analytics dashboard</li>
+        <li>Priority support</li>
+      </ul>
+      <a href="#waitlist" class="btn-outline red">Get Started</a>
+    </div>
+    <div class="pricing-card reveal" style="transition-delay: 0.2s;">
+      <div class="pricing-tier">Multi-Venue / Enterprise</div>
+      <div class="pricing-price">—</div>
+      <div class="pricing-period">Custom pricing</div>
+      <ul class="pricing-features">
+        <li>Unlimited venues</li>
+        <li>Cross-venue patron database</li>
+        <li>Dedicated account manager</li>
+        <li>API & POS integration</li>
+        <li>Custom SLA & onboarding</li>
+        <li>White-label option</li>
+      </ul>
+      <a href="#waitlist" class="btn-outline">Contact Sales</a>
+    </div>
+  </div>
+</section>
+
+<!-- CTA / WAITLIST -->
+<section class="cta-section" id="waitlist">
+  <div class="cta-bg"></div>
+  <h2 class="cta-title">
+    <span class="dim">DON'T</span> WAIT<br>FOR AN<br><span class="red">INCIDENT</span>
+  </h2>
+  <p class="cta-sub">Join the early access waitlist. First 100 venues get 3 months free.</p>
+  <div class="email-form">
+    <input type="email" class="email-input" placeholder="your@venue.com" id="emailInput">
+    <button class="email-submit" onclick="handleSubmit()">Get Access</button>
+  </div>
+  <div class="success-msg" id="successMsg">✓ You're on the list. We'll be in touch.</div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">FLAGGED</div>
+  <div class="footer-copy">© 2025 Flagged Inc. · Built for venues that take safety seriously.</div>
+</footer>
+
+<script>
+  // Scroll reveal
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+      }
+    });
+  }, { threshold: 0.15 });
+
+  document.querySelectorAll('.reveal, .stat-cell, .step').forEach(el => {
+    observer.observe(el);
+  });
+
+  // Email form
+  function handleSubmit() {
+    const input = document.getElementById('emailInput');
+    const success = document.getElementById('successMsg');
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (emailRegex.test(input.value)) {
+      input.style.display = 'none';
+      document.querySelector('.email-submit').style.display = 'none';
+      success.style.display = 'block';
+    } else {
+      input.style.borderColor = 'var(--red)';
+      input.placeholder = 'Enter a valid email address';
+    }
+  }
+
+  document.getElementById('emailInput').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') handleSubmit();
+  });
+
+  // Nav scroll effect
+  window.addEventListener('scroll', () => {
+    const nav = document.querySelector('nav');
+    if (window.scrollY > 50) {
+      nav.style.borderBottomColor = '#333';
+    } else {
+      nav.style.borderBottomColor = 'var(--border)';
+    }
+  });
+</script>
+</body>
+</html>
